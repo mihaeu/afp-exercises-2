@@ -4,6 +4,7 @@ class Philosopher {
 	constructor(id, leftNeighbor, rightNeighbor, hasLeftFork, hasRightFork) {
 
 		this.id = id;
+		this.wantsToEat = false;
 
 		this.leftNeighbor = leftNeighbor;
 		this.rightNeighbor = rightNeighbor;
@@ -29,11 +30,13 @@ class Philosopher {
 			// if someone is done eating, he's not waiting for us anymore
 			if (message.status === Philosopher.DONE_EATING) {
 				this.requests[message.id] = false;
-				this.tryToEat();
+				if (this.wantsToEat) this.tryToEat();
 			}
 
 			// if someone is not eating, we can try again
-			if (message.status === Philosopher.NOT_EATING) this.tryToEat();
+			if (message.status === Philosopher.NOT_EATING){
+				if (this.wantsToEat) this.tryToEat();
+			}
 
 			// if someone wants to eat he has a higher priority
 			if (message.status === Philosopher.WANTS_TO_EAT) this.requests[message.id] = true;
@@ -46,14 +49,15 @@ class Philosopher {
 
 
 	think() {
-		// take your time (10ms)
-		require('sleep').usleep(10000);
-
 		process.send({
 			id: this.id,
 			message: Philosopher.THINKING
 		});
 
+		// take your time (10ms)
+		require('sleep').usleep(10000);
+
+		this.nextAction();
 	}
 
 	tryToEat() {
@@ -63,6 +67,7 @@ class Philosopher {
 
 			this.eat();
 		} else {
+			this.wantsToEat = true;
 			for (let id in this.forks) {
 				if (this.forks[id] === false) {
 					process.send({
@@ -75,6 +80,11 @@ class Philosopher {
 	}
 
 	eat() {
+		process.send({
+			id: this.id,
+			message: Philosopher.START_EATING
+		});
+		this.wantsToEat = false;
 		// take your time (10ms)
 		require('sleep').usleep(10000);
 
@@ -82,6 +92,8 @@ class Philosopher {
 			id: this.id,
 			message: Philosopher.DONE_EATING
 		});
+
+		this.nextAction();
 	}
 
 	hasBothForks() {
@@ -98,6 +110,7 @@ class Philosopher {
 	}
 }
 
+Philosopher.START_EATING = 'start eating';
 Philosopher.DONE_EATING = 'done eating';
 Philosopher.NOT_EATING = 'not eating';
 Philosopher.WANTS_TO_EAT = 'wants to eat';
