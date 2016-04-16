@@ -18,13 +18,28 @@ class Philosopher {
 			rightNeighbor: false
 		};
 
-		this.nextAction();
+		this.tryToEat();
 		this.ciclesSinceHungry = 0;
 
 		process.on('message', (message) => {
-			console.log('Philosopher ' + this.id + ' received', message);
 
 			if (message.target !== this.id) return;
+			// console.log('Philosopher ' + this.id + ' received',
+			// 	message,
+			// 	"\nleft neighbor",
+			// 	this.leftNeighbor,
+			// 	"\nright neighbor",
+			// 	this.rightNeighbor,
+			// 	"\nleft neighbor waits",
+			// 	this.requests.leftNeighbor,
+			// 	"\nright neighbor waits",
+			// 	this.requests.rightNeighbor,
+			// 	"\nmy left fork",
+			// 	this.leftFork,
+			// 	"\nmy right fork",
+			// 	this.rightFork,
+			// 	"\n"
+			// );
 
 			if (message.status === Philosopher.GIVE_FORK) {
 				if (message.id === this.leftNeighbor) this.leftFork = message.fork;
@@ -70,13 +85,34 @@ class Philosopher {
 			message: Philosopher.THINKING
 		});
 
-		// take your time (10ms)
-		require('sleep').usleep(10000);
+		// take your time (100ms)
+		require('sleep').usleep(100000);
 
 		this.nextAction();
 	}
 
 	tryToEat() {
+
+		// console.log('TRY TO EAT - Philosopher ' + this.id,
+		// 	'------------',
+		// 	this.hasBothForks()
+		// 	&& this.isLeftNeighborNotWaiting()
+		// 	&& this.isRightNeighborNotWaiting(),
+		// 	this.requests,
+		// 	"\nleft neighbor",
+		// 	this.leftNeighbor,
+		// 	"\nright neighbor",
+		// 	this.rightNeighbor,
+		// 	"\nleft neighbor waits",
+		// 	this.requests.leftNeighbor,
+		// 	"\nright neighbor waits",
+		// 	this.requests.rightNeighbor,
+		// 	"\nmy left fork",
+		// 	this.leftFork,
+		// 	"\nmy right fork",
+		// 	this.rightFork,
+		// 	"\n"
+		// );
 
 		if (this.hasBothForks()
 			&& this.isLeftNeighborNotWaiting()
@@ -109,8 +145,8 @@ class Philosopher {
 		});
 		this.wantsToEat = false;
 
-		// take your time (10ms)
-		require('sleep').usleep(10000);
+		// take your time (100ms)
+		require('sleep').usleep(100000);
 
 		this.leftFork.clean = false;
 		this.rightFork.clean = false;
@@ -148,11 +184,11 @@ class Philosopher {
 	}
 
 	isRightNeighborNotWaiting() {
-		return this.requests.rightNeighbor !== false;
+		return this.requests.rightNeighbor === false;
 	}
 
 	isLeftNeighborNotWaiting() {
-		return this.requests.leftNeighbor !== false;
+		return this.requests.leftNeighbor === false;
 	}
 }
 
