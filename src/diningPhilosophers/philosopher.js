@@ -16,7 +16,7 @@ class Philosopher {
 
     think() {
         console.log("Philosoph " + this.name + " denkt nach.");
-        setTimeout(() => this.nextAction(), 10);
+        setTimeout(() => this.nextAction(), 1);
     }
 
     eat() {
@@ -31,14 +31,14 @@ class Philosopher {
                 this.rightFork.putDown();
                 this.ciclesSinceHungry = 0;
                 this.nextAction()
-            }, 20);
+            }, 1);
         } else {
             if (this.ciclesSinceHungry > 50){
                 throw new Error("Philsoph " + this.name + " ist verhungert!");
             }
             console.log("Philsoph " + this.name + " bleibt hungrig.");
             this.ciclesSinceHungry++;
-            setTimeout(()=>this.eat(), 5);
+            setTimeout(()=>this.eat(), 1);
         }
     }
 }
