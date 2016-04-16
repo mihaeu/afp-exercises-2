@@ -24,6 +24,8 @@ class Philosopher {
 		this.ciclesSinceHungry = 0;
 
 		process.on('message', (message) => {
+			console.log('Philosopher ' + this.id + ' received', message);
+
 			// if someone is done eating, he's not waiting for us anymore
 			if (message.status === Philosopher.DONE_EATING) {
 				this.requests[message.id] = false;
@@ -61,14 +63,14 @@ class Philosopher {
 
 			this.eat();
 		} else {
-			this.forks
-				.filter((id, hasFork) => hasFork === false) // forks that I don't have
-				.forEach((id, hasFork) => {
+			for (let id in this.forks) {
+				if (this.forks[id] === false) {
 					process.send({
 						id: this.id,
 						message: Philosopher.WANTS_TO_EAT
 					});
-				});
+				}
+			}
 		}
 	}
 
@@ -98,7 +100,7 @@ class Philosopher {
 
 Philosopher.DONE_EATING = 'done eating';
 Philosopher.NOT_EATING = 'not eating';
-Philosopher.WANTS_TO_EAT = 'wants to tryToEat';
+Philosopher.WANTS_TO_EAT = 'wants to eat';
 Philosopher.THINKING = 'thinking';
 
 module.exports = Philosopher;
