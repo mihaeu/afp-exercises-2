@@ -1,11 +1,6 @@
 "use strict";
 
 class Philosopher {
-	static DONE_EATING = 'done eating';
-	static NOT_EATING = 'not eating';
-	static WANTS_TO_EAT = 'wants to tryToEat';
-	static THINKING = 'thinking';
-
 	constructor(id, leftNeighbor, rightNeighbor, hasLeftFork, hasRightFork) {
 
 		this.id = id;
@@ -100,5 +95,10 @@ class Philosopher {
 		return this.requests[this.leftNeighbor] !== false;
 	}
 }
+
+Philosopher.DONE_EATING = 'done eating';
+Philosopher.NOT_EATING = 'not eating';
+Philosopher.WANTS_TO_EAT = 'wants to tryToEat';
+Philosopher.THINKING = 'thinking';
 
 module.exports = Philosopher;
