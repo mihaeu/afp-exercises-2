@@ -1,21 +1,9 @@
 "use strict";
 
 class Fork {
-  constructor(id) {
+  constructor(id, clean) {
     this.id = id;
-    this._inUse = false;
-  }
-
-  inUse() {
-    return this._inUse;
-  }
-
-  use() {
-    this._inUse = true;
-  }
-
-  putDown() {
-    this._inUse = false;
+    this.clean = clean || false;
   }
 }
 

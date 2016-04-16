@@ -1,7 +1,7 @@
 "use strict";
 
 class Philosopher {
-	constructor(id, leftNeighbor, rightNeighbor, hasLeftFork, hasRightFork) {
+	constructor(id, leftNeighbor, rightNeighbor, leftFork, rightFork) {
 
 		this.id = id;
 		this.wantsToEat = false;
@@ -9,28 +9,27 @@ class Philosopher {
 		this.leftNeighbor = leftNeighbor;
 		this.rightNeighbor = rightNeighbor;
 
-		// am I holding the fork (=true) or is it with a neighbor (=false)
-		this.forks = [
-			leftNeighbor = hasLeftFork || false,
-			rightNeighbor = hasRightFork || false
-		];
+		this.leftFork = leftFork || null;
+		this.rightFork = rightFork || null;
 
 		// waiting list
-		this.requests = [
-			leftNeighbor = false,
-			rightNeighbor = false
-		];
+		this.requests = {
+			leftNeighbor: false,
+			rightNeighbor: false
+		};
 
 		this.nextAction();
 		this.ciclesSinceHungry = 0;
 
 		process.on('message', (message) => {
+			if (message.target !== this.id) return;
 			console.log('Philosopher ' + this.id + ' received', message);
 
 			// if someone is done eating, he's not waiting for us anymore
 			if (message.status === Philosopher.DONE_EATING) {
-				this.requests[message.id] = false;
 				if (this.wantsToEat) this.tryToEat();
+				if (message.id === this.leftNeighbor) this.leftFork = message.fork;
+				if (message.id === this.rightNeighbor) this.rightFork = message.fork;
 			}
 
 			// if someone is not eating, we can try again
@@ -39,7 +38,30 @@ class Philosopher {
 			}
 
 			// if someone wants to eat he has a higher priority
-			if (message.status === Philosopher.WANTS_TO_EAT) this.requests[message.id] = true;
+			if (message.status === Philosopher.WANTS_TO_EAT) {
+				if (message.id === this.leftNeighbor && this.leftFork.clean === false) {
+					this.leftFork.clean = true;
+					process.send({
+						id: this.id,
+						target: this.leftNeighbor,
+						message: Philosopher.NOT_EATING,
+						fork: leftFork
+					});
+					this.leftFork = null;
+				}
+				if (message.id === this.rightNeighbor && this.rightFork.clean === false) {
+					this.rightFork.clean = true;
+					process.send({
+						id: this.id,
+						target: this.rightNeighbor,
+						message: Philosopher.NOT_EATING,
+						fork: rightFork
+					});
+					this.rightFork = null;
+				}
+
+				this.requests[message.id] = true;
+			}
 		});
 	}
 
@@ -61,6 +83,7 @@ class Philosopher {
 	}
 
 	tryToEat() {
+		console.log(this.id, this.leftFork, this.rightFork, this.isLeftNeighborNotWaiting(), this.isRightNeighborNotWaiting());
 		if (this.hasBothForks()
 			&& this.isLeftNeighborNotWaiting()
 			&& this.isRightNeighborNotWaiting()) {
@@ -68,13 +91,19 @@ class Philosopher {
 			this.eat();
 		} else {
 			this.wantsToEat = true;
-			for (let id in this.forks) {
-				if (this.forks[id] === false) {
-					process.send({
-						id: this.id,
-						message: Philosopher.WANTS_TO_EAT
-					});
-				}
+			if (this.leftFork === null) {
+				process.send({
+					id: this.id,
+					target: this.leftNeighbor,
+					message: Philosopher.WANTS_TO_EAT,
+				});
+			}
+			if (this.right === null) {
+				process.send({
+					id: this.id,
+					target: this.rightNeighbor,
+					message: Philosopher.WANTS_TO_EAT
+				});
 			}
 		}
 	}
@@ -85,28 +114,50 @@ class Philosopher {
 			message: Philosopher.START_EATING
 		});
 		this.wantsToEat = false;
+
 		// take your time (10ms)
 		require('sleep').usleep(10000);
 
-		process.send({
-			id: this.id,
-			message: Philosopher.DONE_EATING
-		});
+		this.leftFork.clean = false;
+		this.rightFork.clean = false;
+
+		// give forks to waiting philosophers
+		if (this.requests.rightNeighbor === true) {
+			this.rightFork.clean = true;
+			process.send({
+				id: this.id,
+				target: this.rightNeighbor,
+				message: Philosopher.DONE_EATING,
+				fork: this.rightFork
+			});
+			this.rightFork = null;
+		}
+		if (this.requests.leftNeighbor === true) {
+			this.leftFork.clean = true;
+			process.send({
+				id: this.id,
+				target: this.leftNeighbor,
+				message: Philosopher.DONE_EATING,
+				fork: this.leftFork
+			});
+			this.leftFork = null;
+		}
+
+
 
 		this.nextAction();
 	}
 
 	hasBothForks() {
-		return this.forks[this.leftNeighbor] === true
-			&& this.forks[this.rightNeighbor] == true;
+		return this.leftFork !== null && this.rightFork !== null;
 	}
 
 	isRightNeighborNotWaiting() {
-		return this.requests[this.rightNeighbor] !== false;
+		return this.requests.rightNeighbor !== false;
 	}
 
 	isLeftNeighborNotWaiting() {
-		return this.requests[this.leftNeighbor] !== false;
+		return this.requests.leftNeighbor !== false;
 	}
 }
 
