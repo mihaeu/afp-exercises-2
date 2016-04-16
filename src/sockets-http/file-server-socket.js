@@ -10,7 +10,7 @@ let server = net.createServer(function(socket) {
   socket.pipe(socket);
 
   socket.on('data', function(data) {
-    readFile(data, 'utf8')
+	  readFile(data.toString().trim(), 'utf8')
       .then(data => socket.write(data))
       .catch(error => socket.write(error.message));
   });
