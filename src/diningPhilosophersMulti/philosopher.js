@@ -22,29 +22,23 @@ class Philosopher {
 		this.ciclesSinceHungry = 0;
 
 		process.on('message', (message) => {
-			if (message.target !== this.id) return;
 			console.log('Philosopher ' + this.id + ' received', message);
 
-			// if someone is done eating, he's not waiting for us anymore
-			if (message.status === Philosopher.DONE_EATING) {
-				if (this.wantsToEat) this.tryToEat();
+			if (message.target !== this.id) return;
+
+			if (message.status === Philosopher.GIVE_FORK) {
 				if (message.id === this.leftNeighbor) this.leftFork = message.fork;
 				if (message.id === this.rightNeighbor) this.rightFork = message.fork;
-			}
-
-			// if someone is not eating, we can try again
-			if (message.status === Philosopher.NOT_EATING){
 				if (this.wantsToEat) this.tryToEat();
 			}
 
-			// if someone wants to eat he has a higher priority
-			if (message.status === Philosopher.WANTS_TO_EAT) {
+			if (message.status === Philosopher.REQUEST_FORKS) {
 				if (message.id === this.leftNeighbor && this.leftFork.clean === false) {
 					this.leftFork.clean = true;
 					process.send({
 						id: this.id,
 						target: this.leftNeighbor,
-						message: Philosopher.NOT_EATING,
+						message: Philosopher.GIVE_FORK,
 						fork: leftFork
 					});
 					this.leftFork = null;
@@ -54,7 +48,7 @@ class Philosopher {
 					process.send({
 						id: this.id,
 						target: this.rightNeighbor,
-						message: Philosopher.NOT_EATING,
+						message: Philosopher.GIVE_FORK,
 						fork: rightFork
 					});
 					this.rightFork = null;
@@ -83,26 +77,26 @@ class Philosopher {
 	}
 
 	tryToEat() {
-		console.log(this.id, this.leftFork, this.rightFork, this.isLeftNeighborNotWaiting(), this.isRightNeighborNotWaiting());
+
 		if (this.hasBothForks()
 			&& this.isLeftNeighborNotWaiting()
 			&& this.isRightNeighborNotWaiting()) {
 
 			this.eat();
-		} else {
+		} else{
 			this.wantsToEat = true;
 			if (this.leftFork === null) {
 				process.send({
 					id: this.id,
 					target: this.leftNeighbor,
-					message: Philosopher.WANTS_TO_EAT,
+					message: Philosopher.REQUEST_FORKS,
 				});
 			}
 			if (this.right === null) {
 				process.send({
 					id: this.id,
 					target: this.rightNeighbor,
-					message: Philosopher.WANTS_TO_EAT
+					message: Philosopher.REQUEST_FORKS
 				});
 			}
 		}
@@ -127,7 +121,7 @@ class Philosopher {
 			process.send({
 				id: this.id,
 				target: this.rightNeighbor,
-				message: Philosopher.DONE_EATING,
+				message: Philosopher.GIVE_FORK,
 				fork: this.rightFork
 			});
 			this.rightFork = null;
@@ -137,7 +131,7 @@ class Philosopher {
 			process.send({
 				id: this.id,
 				target: this.leftNeighbor,
-				message: Philosopher.DONE_EATING,
+				message: Philosopher.GIVE_FORK,
 				fork: this.leftFork
 			});
 			this.leftFork = null;
@@ -149,7 +143,8 @@ class Philosopher {
 	}
 
 	hasBothForks() {
-		return this.leftFork !== null && this.rightFork !== null;
+		return this.leftFork !== null
+			&& this.rightFork !== null;
 	}
 
 	isRightNeighborNotWaiting() {
@@ -162,9 +157,8 @@ class Philosopher {
 }
 
 Philosopher.START_EATING = 'start eating';
-Philosopher.DONE_EATING = 'done eating';
-Philosopher.NOT_EATING = 'not eating';
-Philosopher.WANTS_TO_EAT = 'wants to eat';
+Philosopher.GIVE_FORK = 'done eating';
+Philosopher.REQUEST_FORKS = 'wants to eat';
 Philosopher.THINKING = 'thinking';
 
 module.exports = Philosopher;
